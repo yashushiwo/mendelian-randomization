@@ -1,0 +1,291 @@
+#########Univariable孟德尔随机化
+setwd（“C：/Users/admin/Desktop/B”）
+rm（list=ls（））
+install.packages（“devtools”）
+devtools：：install_github（“MRCIEU/TwoSampleMR”）
+#######读取暴露GWAS文件#
+#####读取暴露GWAS文件（直接通过R包数据库读取），
+库（双样本MR）
+exp_dat <-extract_instruments（outcomes='ieu-b-40'，access_token = NULL，p1=5e-8，clump=FALSE） #获取暴露数据，这里用ieu-a-2这个BMI的GWAS ID举例 #获取暴露数据，这里用ieu-a-2这个BMI的GWAS ID举例
+##access_token这个参数，对于中国大陆地区的用户必须设置该参数为access_token=NULL。
+##参数p1，它是用来指定暴露中SNP的p值的，它的默认值是p1=5e-8，因此只有p值小于5e-8的SNP才会提取出来。当然如果没有SNP小于5e-8的话，我们通常可以设置p1=1e-5，不过这个时候就需要认真评估弱工具变量偏倚了。
+##参数clump以及与之相关的r2和kb，clump是一个逻辑型参数，只有clump=TRUE和clump=FALSE这两种情况。如果选择了参数值为clump=FALSE的话，那么r2和kb这两个参数就无效了，也即先不去除含有连锁不平衡的SNP。当clump=TRUE时##，我们可以用r2和kb来确定去除连锁不平衡SNP的条件，默认情况下是clump=TRUE，r2=0.001和kb=10000，最好这一步先不去LD。
+write.csv（exp_dat，“res.csv”）####读取暴露GWAS文件都得改
+exp_dat <-extract_instruments（outcomes='ieu-b-40'，access_token = NULL，p1=5e-8，clump=T）
+exp_dat <-extract_instruments（outcomes='ieu-b-40'，access_token = NULL，p1=5e-8，clump=TRUE，r2=0.001，kb=5000）
+库（双样本MR） #加载R包
+exp_dat <-extract_instruments（outcomes='ieu-b-40'，access_token = NULL，p1=5e-8，clump=FALSE） #获取暴露数据，这里用ieu-a-2这个BMI的GWAS ID举例
+exp_dat <-clump_data（exp_dat，clump_r2=0.01，clump_kb=5000）
+######第一种：读取结局GWAS文件（直接通过R包数据库读取）
+out_dat <- extract_outcome_data（
+snps=exp_dat$SNP，
+结果='ebi-a-GCST005348'，
+代理 = 假，
+maf_threshold = 0.01，
+access_token = 空）
+write.csv（exp_dat，“22.csv”）
+##snps：它是一串以rs开头的SNP ID，这里要对应的是你暴露GWAS文件的SNP列
+##outcomes：它是result在MR base中的ID;
+##proxies：它表示是否使用代理SNP，默认值是TRUE，也即当一个SNP在result中找不到时可以使用与其存在强连锁不平衡的SNP信息来替代，我个人喜欢设置成FALSE。
+##maf_threshold：它表示的是SNP在outcome中的最小等位基因频率，默认值是0.3，一般设置的是0.01。
+##access_token：大陆用户必须设置成access_token=NULL。
+
+########将两个文件的SNP效应方向对齐，action一般选2
+mydata <- harmonise_data（
+exposure_dat=exp_dat，
+outcome_dat=out_dat，
+操作 = 2）
+#########默认的五种方法计算MR效果，其中IVW最重要
+Res <- Mr（mydata）
+res####MR结果，看P值是否
+#####################################################敏感性分析（这里是常用的三种，具体的敏感性分析还需要根据自己的结果和想法自行添加和设计）
+######异质性检验，q大于0.05就表示没有异质性
+het <- mr_heterogeneity（mydata）
+赫特
+res_new<-mr（mydata，method_list=c（'mr_ivw_mre'）） #如果异质性很大，需要用随机效应模型重新做MR
+res_new
+######通过mr-egger检验水平多效性，p大于0.05表示没有水平多效性
+Pleio <- mr_pleiotropy_test（mydata）
+普利奥
+#######留一法判断MR结果是否稳健
+单<- mr_leaveoneout（MyData）
+#####作图
+##留一法随机森林
+mr_leaveoneout_plot（单）
+##散点图
+mr_scatter_plot（res，mydata）
+##随机森林总图
+res_single <- mr_singlesnp（mydata）
+mr_forest_plot（res_single）
+##漏斗图
+mr_funnel_plot（res_single）
+
+
+######multivariable 孟德尔随机化
+setwd("D:\\生物信息学\\生息网络资料\\MR自己写的笔记代码\\多变量MR\\多变量例子")
+#读入数据包
+library(TwoSampleMR)
+
+id_exposure <- c("ieu-a-299","ieu-a-300", ) # 三个暴露分别是HDL cholesterol，LDL cholesterol和Triglycerides
+id_outcome <- "ieu-a-7"
+
+exposure_dat <- mv_extract_exposures(id_exposure)#三个显著相关的SNP提出
+
+exp1 <- extract_instruments(outcomes="ieu-a-299")  #本地
+exp2 <- extract_instruments(outcomes="ieu-a-300")  #在线
+
+
+sum=dim(exp1)[1]+dim(exp2)[1]+dim(exp3)[1]  
+sum
+
+exp<-rbind(exp1,exp2,exp3)
+exp<-exp["SNP"]
+exp<-unique(exp)
+exp<-clump_data(exp)
+
+exp4<-fread("a.txt")
+head(exp4)
+exp5<-fread("Mvap.txt")
+exp6<-fread("Mvap.txt",header = T,sep="\t")
+exp0<-merge(exp,exp4,by.x = "SNP",by.y = "SNP")
+exp0<-merge(exp,exp4,by.x = "SNP",by.y = "SNP1")
+exp0<-merge(exp,exp4,by.x = "SNP",by.y = "SNP1")
+exp<-rbind(exp4,exp5,exp6)
+
+outcome<-fread("Mvap.txt",header = T,sep="\t")
+exp0<-merge(exp,outcome,by.x = "SNP",by.y = "SNP1")
+
+c<-list(a,b,d,e,f,g,h,i)
+names(c)[[1]] <- "exposure_beta"
+names(c)[[2]] <- "exposure_pval"
+names(c)[[3]] <- "exposure_se"
+names(c)[[4]] <- "outcome_beta"
+names(c)[[5]] <- "outcome_pval"
+names(c)[[6]] <- "outcome_se"
+
+names(c)[[7]] <- "exposure"
+names(c)[[8]] <- "outcome"
+
+outcome_dat <- extract_outcome_data(exposure_dat$SNP, id_outcome)
+mvdat <- mv_harmonise_data(exposure_dat, outcome_dat)
+res <- mv_multiple(mvdat)
+res 
+
+library(data.table)
+a<-fread("a.txt")
+
+#######本地暴露读取######
+exp_l<-mv_extract_exposures_local(
+  feil,
+  sep = " ",
+  phenotype_col = "Phenotype",
+  snp_col = "SNP",
+  beta_col = "beta",
+  se_col = "se",
+  eaf_col = "eaf",
+  effect_allele_col = "effect_allele",
+  other_allele_col = "other_allele",
+  pval_col = "pval",
+  units_col = "units",
+  ncase_col = "ncase",
+  ncontrol_col = "ncontrol",
+  samplesize_col = "samplesize",
+  gene_col = "gene",
+  id_col = "id",
+  min_pval = 1e-200,
+  log_pval = FALSE,
+  pval_threshold = 5e-08,
+  clump_r2 = 0.001,
+  clump_kb = 10000,
+harmonise_strictness = 2
+)
+
+a<-mvdat[[“exposure_pval”]]
+b<-MVDAT[[“exposure_beta”]]
+
+c<-data.frame（a，b）
+
+C<-list（A，B，D）
+名称（c）[[1]] <- “exposure_beta”
+名称（c）[[2]] <- “exposure_pval”
+
+#####merge#####
+expFile=“731outcomes”
+exp=read.table（expFile， header=F， sep=“\t”， check.names=F）
+a<-exp[，1]
+
+SNP<-c（“rs10019888”，“rs103294”）
+snp1<-data.frame（SNP）
+a<-cbind（row.names（a），a）
+merge1<-merge（snp1，a，by.x = “SNP”，by.y = “V1”）
+
+
+# mr_presso可以完成多变量
+#if （！require（“devtools”）） { install.packages（“devtools”） } else {}
+#devtools：：install_github（“rondolab/MR-PRESSO”）
+
+SummaryStats<-cbind（mvdat[[“outcome_beta”]]，
+MVDAT[[“exposure_beta”]][，1]，
+MVDAT[[“exposure_beta”]][，2]，
+MVDAT[[“exposure_beta”]][，3]，
+                    mvdat[["exposure_se"]][,1],
+                    mvdat[["exposure_se"]][,2],
+                    mvdat[["exposure_se"]][,3],
+                    mvdat[["outcome_se"]])
+SummaryStats<-data.frame(SummaryStats)
+library(TwoSampleMR)
+library(MRPRESSO)
+mr_presso(BetaOutcome = "X1",
+          BetaExposure = c("X2", "X3","X4"), 
+          SdOutcome = "X8", 
+          SdExposure = c("X5", "X6","X7"),
+          OUTLIERtest = TRUE, 
+          DISTORTIONtest = TRUE, 
+          data = SummaryStats,
+          NbDistribution = 1000, 
+          SignifThreshold = 0.05)
+#########第一种：读取结局GWAS文件（直接通过R包数据库读取）
+out_dat <- extract_outcome_data(
+  snps=exp_dat$SNP,
+######LASOO挑选变量########
+mv_lasso_feature_selection(mvdat)
+  maf_threshold = 0.01,
+mv_residual(
+MVDAT，
+截距 = 假，
+instrument_specific = 假，
+pval_threshold = 5e-08，
+图 = 假
+)
+
+mv_multiple（
+MVDAT，
+截距 = 假，
+instrument_specific = 假，
+pval_threshold = 5e-08，
+图 = 假
+)
+
+a<-mv_subset（
+MVDAT，
+特征 = mv_lasso_feature_selection（MVDAT），
+截距 = 假，
+instrument_specific = 假，
+pval_threshold = 5e-08，
+图 = 假
+)
+a<-generate_odds_ratios（res$result）
+write.table（a， file=“多变量不用LASSO.xls”，sep=“\t”，quote=F）
+
+
+#######Mediated Mendelian Randomization
+setwd("D:\\生物信息学\\生息网络资料\\MR自己写的笔记代码\\多变量MR")
+library(TwoSampleMR)
+
+
+#吸烟与肺癌
+bmi_exp <- extract_instruments（结果=“UKB-A-328”）
+t2d_out <- extract_outcome_data（
+snps=bmi_exp$SNP，
+结果=“IEU-B-4954”，
+)
+mydata <- harmonise_data(
+exposure_dat=bmi_exp，
+outcome_dat=t2d_out，
+操作 = 2 ）
+res_mi1=generate_odds_ratios（mr（mydata，method_list=c（“mr_ivw”）））
+res_mi1
+
+
+#肥胖与癌症
+bmi_exp <- extract_instruments（outcomes=“ebi-a-GCST001475”）
+t2d_out <- extract_outcome_data（
+snps=bmi_exp$SNP，
+结果=“IEU-B-4954”，
+)
+mydata <- harmonise_data(
+exposure_dat=bmi_exp，
+outcome_dat=t2d_out，
+操作 = 2 ）
+res_mi2=generate_odds_ratios（mr（mydata，method_list=c（“mr_ivw”）））
+res_mi2
+
+#肥胖与吸烟
+bmi_exp <- extract_instruments（outcomes=“ebi-a-GCST001475”）
+t2d_out <- extract_outcome_data（
+snps=bmi_exp$SNP，
+结果=“UKB-A-328”，
+)
+mydata <- harmonise_data(
+  exposure_dat=bmi_exp,    
+  outcome_dat=t2d_out,
+  action=2 )
+res_mi3=generate_odds_ratios(mr(mydata,method_list=c("mr_ivw")))
+res_mi3
+
+#合并数据
+res<-rbind(res_mi1,res_mi2,res_mi3)
+
+#计算总的beta
+beta=res$b[1]+res$b[2]*res$b[3]
+beta
+#计算直接效应100%
+beta_D=res$b[1]/beta
+beta_D
+#计算间接效应100%
+beta_indirect=res$b[2]*res$b[3]/beta
+beta_indirect
+#系数乘积检验
+#标准误差
+S=sqrt(res$b[2]^2*res$se[2]^2+res$b[3]^2*res$se[2]^2)
+S
+#Z统计量
+Z=res$b[2]*res$b[3]/S
+Z
+
+res$b[2]*res$b[3]
+res$b[2]*res$b[3]+1.96*S
+res$b[2]*res$b[3]-1.96*S
+
+P=2*pnorm(q=1.96, lower.tail=FALSE) #Z=1.96  P=0.05
+P
